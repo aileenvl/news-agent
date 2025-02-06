@@ -1,0 +1,4 @@
+{
+  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai": { "integrity": "sha512-M7c7HyoIPB9sp4Y7JXqnbpTXjZ8WhZRJyVyA8vsX+CZ7qXXxyFwe4TxVtxPb+bcT1ts3Eakp/aM6Bf4Gvgf99A==", "contentType": "application/javascript; charset=utf-8" },
+  "version": 1
+}

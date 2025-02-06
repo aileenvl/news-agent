@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const { scrapeHuggingFace, scrapeArticleContent } = require('./huggingface-scrapper');
 const { CloudManager } = require('@oramacloud/client');
+const fetch = require('node-fetch');
 require('dotenv').config();
 
 const PRIVATE_API_KEY = process.env.ORAMA_API_KEY;
@@ -64,12 +65,58 @@ async function checkDatabase() {
 }
 
 // Fetch data from an API
-async function fetchFromAPI(url, apiKey) {
-    console.log(`Fetching API data from ${url}`);
-    const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${apiKey}` },
-    });
-    return response.json();
+async function fetchFromAPI(url) {
+    console.log('Fetching from API:', url);
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log(`Fetched ${data.length} items from API`);
+        
+        // For Hacker News, we need to fetch each story
+        if (url.includes('hacker-news')) {
+            console.log('Processing Hacker News items...');
+            const storyIds = data.slice(0, 30); // Get top 30 stories
+            const stories = [];
+            
+            for (const id of storyIds) {
+                try {
+                    console.log(`Fetching story ${id}...`);
+                    const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
+                    if (!storyResponse.ok) {
+                        throw new Error(`HTTP error! status: ${storyResponse.status}`);
+                    }
+                    const story = await storyResponse.json();
+                    if (story && story.url) {
+                        stories.push({
+                            title: story.title,
+                            url: story.url,
+                            date: new Date(story.time * 1000).toISOString(),
+                            source_url: `https://news.ycombinator.com/item?id=${story.id}`,
+                            score: story.score,
+                            comments: story.descendants,
+                            content: `Score: ${story.score} | Comments: ${story.descendants || 0}\n\n${story.text || ''}`
+                        });
+                        console.log(`Added story: ${story.title}`);
+                    }
+                } catch (error) {
+                    console.error(`Error fetching story ${id}:`, error);
+                }
+                // Small delay to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            console.log(`Successfully processed ${stories.length} Hacker News stories`);
+            return stories;
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('Error fetching from API:', error);
+        throw error;
+    }
 }
 
 // Fetch data from an RSS feed
@@ -124,13 +171,22 @@ async function fetchAllSources() {
     });
 
     try {
-        // No need to empty the index since we're using update now
         for (const source of sources) {
             console.log(`\nProcessing source: ${source.name} (${source.type})`);
             try {
                 let items = [];
-                if (source.type === 'api' && source.api_key) {
-                    items = await fetchFromAPI(source.url, source.api_key);
+                if (source.type === 'api') {  
+                    items = await fetchFromAPI(source.url);
+                    if (items && items.length > 0) {
+                        console.log(`Fetched ${items.length} items from ${source.name}`);
+                        // Process items in smaller batches
+                        const batchSize = 5;
+                        for (let i = 0; i < items.length; i += batchSize) {
+                            await processBatch(browser, items, source.name, i, batchSize);
+                        }
+                    } else {
+                        console.log(`No items fetched from ${source.name}`);
+                    }
                 } else if (source.type === 'rss') {
                     items = await fetchFromRSS(source.url);
                 } else if (source.type === 'scrape') {
@@ -141,17 +197,10 @@ async function fetchAllSources() {
                         items = await scrapeGeneric(browser, source.url, source.config.selector);
                     }
                 }
-                
-                // Process items in smaller batches
-                const batchSize = 5; // Smaller batch size to avoid overwhelming the system
-                for (let i = 0; i < items.length; i += batchSize) {
-                    await processBatch(browser, items, source.name, i, batchSize);
-                }
             } catch (error) {
                 console.error(`Error processing source ${source.name}:`, error);
             }
         }
-        // Deploy step removed as it's no longer necessary
     } finally {
         await browser.close();
     }

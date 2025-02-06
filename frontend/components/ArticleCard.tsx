@@ -1,5 +1,8 @@
+'use client';
+
 import { useState } from 'react';
 import { Article } from '@/types';
+import { generateSummary } from '@/lib/webai';
 import { formatDistanceToNow } from 'date-fns';
 import { ArrowTopRightOnSquareIcon, ChatBubbleLeftIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
@@ -20,16 +23,11 @@ export function ArticleCard({ article }: ArticleCardProps) {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/summarize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: article.content }),
-      });
-      const data = await response.json();
-      setSummary(data.summary);
+      const generatedSummary = await generateSummary(article.content);
+      setSummary(generatedSummary);
       setShowSummary(true);
     } catch (error) {
-      console.error('Error getting summary:', error);
+      console.error('Error generating summary:', error);
     } finally {
       setLoading(false);
     }
@@ -66,8 +64,8 @@ export function ArticleCard({ article }: ArticleCardProps) {
           <div className="flex items-center space-x-4 mt-4">
             <button
               onClick={handleSummarize}
-              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
               disabled={loading}
+              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
             >
               <ChatBubbleLeftIcon className="h-4 w-4 mr-1.5" />
               {loading ? 'Summarizing...' : showSummary ? 'Hide Summary' : 'Summarize'}
