@@ -1,9 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { Suspense } from 'react';
 import { SearchBar } from '@/components/SearchBar';
 import { ArticleList } from '@/components/ArticleList';
 import { useSearch } from '@/hooks/useSearch';
+
+const SOURCE_TYPES = [
+  { id: 'hackernews', name: 'Hacker News', color: 'orange' },
+  { id: 'huggingface', name: 'Hugging Face', color: 'yellow' }
+];
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,10 +42,10 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-500">
-                Tech Digest
+                Daily Digest
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                Your daily dose of tech news and insights
+              Tech news and insights 
               </p>
             </div>
             <div className="w-full md:w-96">
@@ -54,7 +60,7 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
           <div className="mb-6 rounded-lg bg-red-50 p-4">
             <div className="flex">
@@ -76,15 +82,21 @@ export default function Home() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Results Count and Items Per Page */}
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              {loading ? (
-                'Loading...'
-              ) : totalCount === 0 ? (
-                'No results found'
-              ) : (
-                `Showing ${((page - 1) * limit) + 1}-${Math.min(page * limit, totalCount)} of ${totalCount} results`
-              )}
-            </p>
+            <div className="flex items-center space-x-4">
+              <div className="flex gap-2">
+                {SOURCE_TYPES.map((source) => (
+                  <div
+                    key={source.id}
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+                      ${source.color === 'orange' 
+                        ? 'bg-orange-100 text-orange-800' 
+                        : 'bg-yellow-100 text-yellow-800'}`}
+                  >
+                    {source.name}
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600">Items per page:</span>
               <select 
@@ -97,18 +109,29 @@ export default function Home() {
                 <option value={20}>20</option>
                 <option value={50}>50</option>
               </select>
+              <p className="text-sm text-gray-600">
+                {loading ? (
+                  'Loading...'
+                ) : totalCount === 0 ? (
+                  'No results found'
+                ) : (
+                  `Showing ${((page - 1) * limit) + 1}-${Math.min(page * limit, totalCount)} of ${totalCount} results`
+                )}
+              </p>
             </div>
           </div>
 
-          <ArticleList 
-            articles={articles}
-            loading={loading}
-          />
+          <Suspense fallback={<div>Loading...</div>}>
+            <ArticleList 
+              articles={articles}
+              loading={loading}
+            />
+          </Suspense>
 
           {/* Pagination */}
           {!loading && totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200">
-              <div className="flex items-center justify-center space-x-2">
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1 || loading}
@@ -129,7 +152,9 @@ export default function Home() {
                       disabled={loading}
                       className={`px-3 py-1 rounded-md border ${
                         page === i + 1
-                          ? 'bg-blue-50 text-blue-600 border-blue-500'
+                          ? 'bg-indigo-50 text-indigo-600 border-indigo-300'
+                          : loading
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-white text-gray-700 hover:bg-gray-50'
                       }`}
                     >

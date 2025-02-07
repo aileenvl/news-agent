@@ -1,5 +1,12 @@
+import { useState } from 'react';
 import { Article } from '@/types';
 import { ArticleCard } from './ArticleCard';
+import { useSearch } from '@/hooks/useSearch';
+
+const SOURCE_TYPES = [
+  { id: 'hackernews', name: 'Hacker News', color: 'orange' },
+  { id: 'huggingface', name: 'Hugging Face', color: 'yellow' }
+];
 
 interface ArticleListProps {
   articles: Article[];
@@ -10,26 +17,30 @@ export function ArticleList({ articles, loading }: ArticleListProps) {
   if (loading) {
     return (
       <div className="divide-y divide-gray-200">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(3)].map((_, i) => (
           <div key={i} className="p-6 animate-pulse">
             <div className="flex items-start space-x-6">
-              {/* Fake upvotes */}
-              <div className="flex flex-col items-center space-y-1 w-8">
-                <div className="h-5 w-5 bg-gray-200 rounded"></div>
-                <div className="h-4 w-4 bg-gray-200 rounded"></div>
+              {/* Upvote Skeleton */}
+              <div className="flex flex-col items-center space-y-1 pt-1">
+                <div className="h-5 w-5 bg-gray-200 rounded" />
+                <div className="h-4 w-4 bg-gray-200 rounded" />
               </div>
-              
-              {/* Fake content */}
+
               <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="h-4 w-20 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-32 bg-gray-200 rounded"></div>
+                {/* Title Skeleton */}
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
+
+                {/* Meta Info Skeleton */}
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="h-4 w-20 bg-gray-200 rounded" />
+                  <div className="h-4 w-4 bg-gray-200 rounded-full" />
+                  <div className="h-4 w-24 bg-gray-200 rounded" />
                 </div>
-                <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                <div className="flex space-x-4">
-                  <div className="h-8 w-24 bg-gray-200 rounded"></div>
-                  <div className="h-8 w-24 bg-gray-200 rounded"></div>
+
+                {/* Actions Skeleton */}
+                <div className="flex items-center space-x-4">
+                  <div className="h-8 w-24 bg-gray-200 rounded" />
+                  <div className="h-8 w-24 bg-gray-200 rounded" />
                 </div>
               </div>
             </div>

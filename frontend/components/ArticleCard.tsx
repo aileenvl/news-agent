@@ -16,14 +16,17 @@ export function ArticleCard({ article }: ArticleCardProps) {
   const [loading, setLoading] = useState(false);
 
   const handleSummarize = async () => {
+    if (!article.content) return;
+
+    // If we already have a summary, just toggle visibility
     if (summary) {
       setShowSummary(!showSummary);
       return;
     }
 
-    setLoading(true);
     try {
-      const generatedSummary = await generateSummary(article.content);
+      setLoading(true);
+      const generatedSummary = await generateSummary(article.content, article.id);
       setSummary(generatedSummary);
       setShowSummary(true);
     } catch (error) {
@@ -53,44 +56,40 @@ export function ArticleCard({ article }: ArticleCardProps) {
             </time>
           </div>
 
-          {/* Title */}
-          <h2 className="text-lg font-semibold text-gray-900 leading-tight mb-2 group-hover:text-indigo-600 transition-colors duration-200">
-            <a href={article.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+          {/* Title and Link */}
+          <div className="flex items-start justify-between">
+            <h2 className="text-base font-semibold text-gray-900 pr-8">
               {article.title}
-            </a>
-          </h2>
-
-          {/* Actions */}
-          <div className="flex items-center space-x-4 mt-4">
-            <button
-              onClick={handleSummarize}
-              disabled={loading}
-              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-            >
-              <ChatBubbleLeftIcon className="h-4 w-4 mr-1.5" />
-              {loading ? 'Summarizing...' : showSummary ? 'Hide Summary' : 'Summarize'}
-            </button>
-            
+            </h2>
             <a
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+              className="flex-shrink-0 text-gray-400 hover:text-gray-500"
             >
-              <ArrowTopRightOnSquareIcon className="h-4 w-4 mr-1.5" />
-              Read Article
+              <ArrowTopRightOnSquareIcon className="h-5 w-5" />
             </a>
           </div>
 
-          {/* Summary */}
-          {showSummary && summary && (
-            <div className="mt-4">
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Summary</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{summary}</p>
+          {/* Summary Button and Content */}
+          <div className="mt-4">
+            <button
+              onClick={handleSummarize}
+              disabled={loading}
+              className={`inline-flex items-center space-x-2 text-sm ${
+                loading ? 'text-gray-400 cursor-not-allowed' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <ChatBubbleLeftIcon className="h-5 w-5" />
+              <span>{loading ? 'Generating summary...' : summary ? (showSummary ? 'Hide summary' : 'Show summary') : 'Summarize'}</span>
+            </button>
+
+            {showSummary && summary && (
+              <div className="mt-3 text-sm text-gray-600 bg-gray-50 rounded-lg p-4">
+                {summary}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

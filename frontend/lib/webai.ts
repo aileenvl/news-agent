@@ -28,9 +28,9 @@ export async function initLLM() {
   return llmInference;
 }
 
-export async function generateSummary(content: string): Promise<string> {
+export async function generateSummary(content: string, articleId: string): Promise<string> {
   // Using transformers.js for summarization
-  return generateTransformersSummary(content);
+  return generateTransformersSummary(content, articleId);
 
   /* WebAI implementation (kept for future use)
   const llm = await initLLM();

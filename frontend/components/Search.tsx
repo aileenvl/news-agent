@@ -5,10 +5,16 @@ interface SearchProps {
   initialQuery?: string;
 }
 
+const SOURCE_TYPES = [
+  { id: 'hackernews', name: 'Hacker News', color: 'orange' },
+  { id: 'huggingface', name: 'Hugging Face', color: 'yellow' }
+];
+
 export function Search({ initialQuery = '' }: SearchProps) {
   const [query, setQuery] = useState(initialQuery);
   const [page, setPage] = useState(1);
   const [selectedFacets, setSelectedFacets] = useState<Record<string, string[]>>({});
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [limit, setLimit] = useState(10);
 
   const { 
@@ -29,12 +35,25 @@ export function Search({ initialQuery = '' }: SearchProps) {
         limit: 10,
         offset: 0
       }
-    }
+    },
+    sources: selectedSources
   });
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
     setPage(1); // Reset to first page on new search
+  };
+
+  const handleSourceToggle = (sourceId: string) => {
+    setSelectedSources(prev => {
+      const isSelected = prev.includes(sourceId);
+      if (isSelected) {
+        return prev.filter(id => id !== sourceId);
+      } else {
+        return [...prev, sourceId];
+      }
+    });
+    setPage(1); // Reset to first page when sources change
   };
 
   const handleFacetClick = (facet: string, value: string) => {
@@ -82,8 +101,33 @@ export function Search({ initialQuery = '' }: SearchProps) {
     return rangeWithDots;
   };
 
+  const getSourcePillColor = (sourceId: string) => {
+    const source = SOURCE_TYPES.find(s => s.id === sourceId);
+    return source?.color || 'gray';
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Source Type Pills */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {SOURCE_TYPES.map((source) => (
+          <button
+            key={source.id}
+            onClick={() => handleSourceToggle(source.id)}
+            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              selectedSources.includes(source.id)
+                ? `bg-${source.color}-100 text-${source.color}-800 ring-2 ring-${source.color}-500`
+                : `bg-${source.color}-50 text-${source.color}-600 hover:bg-${source.color}-100`
+            }`}
+          >
+            {source.name}
+            {selectedSources.includes(source.id) && (
+              <span className="ml-2 text-${source.color}-600">×</span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* Search Input */}
       <div className="mb-8">
         <div className="relative">
@@ -160,15 +204,20 @@ export function Search({ initialQuery = '' }: SearchProps) {
             {articles.map((article) => (
               <article key={article.id} className="p-6 bg-white rounded-lg shadow-sm">
                 <h3 className="text-xl font-semibold mb-2">{article.title}</h3>
-                <p className="text-gray-600 mb-4">{article.content.substring(0, 200)}...</p>
-                <div className="flex items-center text-sm text-gray-500">
+                <div className="flex items-center gap-2 mb-4">
+                  {article.source && (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${getSourcePillColor(article.source)}-100 text-${getSourcePillColor(article.source)}-800`}>
+                      {SOURCE_TYPES.find(s => s.id === article.source)?.name || article.source}
+                    </span>
+                  )}
                   {article.category && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       {article.category}
                     </span>
                   )}
-                  <span className="ml-2">{new Date(article.date).toLocaleDateString()}</span>
+                  <span className="text-sm text-gray-500">{new Date(article.date).toLocaleDateString()}</span>
                 </div>
+                <p className="text-gray-600">{article.content.substring(0, 200)}...</p>
               </article>
             ))}
           </div>
