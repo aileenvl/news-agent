@@ -74,20 +74,27 @@ export function Search({ initialQuery = '' }: SearchProps) {
   // Generate page numbers with ellipsis
   const getPageNumbers = () => {
     const delta = 2; // Number of pages to show on each side of current page
-    const range: (number | string)[] = [];
+    const range: number[] = [];
     const rangeWithDots: (number | string)[] = [];
-    let l: number;
+    let l: number | null = null;
 
+    // Handle special cases
+    if (totalPages <= 1) return [1];
+
+    // Build the range array
     range.push(1);
     for (let i = currentPage - delta; i <= currentPage + delta; i++) {
-      if (i < totalPages && i > 1) {
+      if (i > 1 && i < totalPages) {
         range.push(i);
       }
     }
-    range.push(totalPages);
+    if (totalPages > 1) {
+      range.push(totalPages);
+    }
 
+    // Add dots between numbers
     for (let i of range) {
-      if (l) {
+      if (l !== null) {
         if (i - l === 2) {
           rangeWithDots.push(l + 1);
         } else if (i - l !== 1) {
@@ -155,7 +162,7 @@ export function Search({ initialQuery = '' }: SearchProps) {
           <h2 className="font-semibold text-lg mb-4">Categories</h2>
           {facets?.category && (
             <div className="space-y-2">
-              {Object.entries(facets.category.values).map(([value, count]) => (
+              {Object.entries(facets.category.values).map(([value, count]: [string, number]) => (
                 <button
                   key={value}
                   onClick={() => handleFacetClick('category', value)}

@@ -1,7 +1,7 @@
-import { pipeline, Pipeline } from '@huggingface/transformers';
+import { pipeline, SummarizationPipeline, SummarizationOutput, SummarizationSingle } from '@huggingface/transformers';
 import { getCachedSummary, setCachedSummary } from './cache';
 
-let summarizationPipeline: Pipeline | null = null;
+let summarizationPipeline: SummarizationPipeline | null = null;
 
 export async function initTransformersSummarizer() {
   if (summarizationPipeline) return summarizationPipeline;
@@ -23,15 +23,28 @@ export async function generateTransformersSummary(content: string, articleId: st
   const pipe = await initTransformersSummarizer();
   
   try {
-    const result = await pipe(`please summarize this article: ${content}`);
-    const summary = result[0].summary_text;
+    // Truncate content if it's too long (model has a max input length)
+    const truncatedContent = content.slice(0, 512);
+    const result = await pipe(truncatedContent);
+    
+    let summary: string;
+    if (Array.isArray(result)) {
+      const firstResult = result[0] as SummarizationSingle;
+      summary = firstResult.summary_text;
+    } else {
+      summary = (result as SummarizationSingle).summary_text;
+    }
+    
+    if (!summary) {
+      throw new Error('No summary generated');
+    }
     
     // Cache the result
     setCachedSummary(articleId, summary);
     
     return summary;
   } catch (error) {
-    console.error('Error generating summary with transformers:', error);
-    throw error;
+    console.error('Error generating summary:', error);
+    return 'Failed to generate summary. Please try again.';
   }
 }
