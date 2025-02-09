@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Article } from '@/types';
-import { generateSummary } from '@/lib/webai';
 import { formatDistanceToNow } from 'date-fns';
 import { ArrowTopRightOnSquareIcon, ChatBubbleLeftIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
@@ -26,8 +25,23 @@ export function ArticleCard({ article }: ArticleCardProps) {
 
     try {
       setLoading(true);
-      const generatedSummary = await generateSummary(article.content, article.id);
-      setSummary(generatedSummary);
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: article.content,
+          articleId: article.id,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate summary');
+      }
+      
+      const data = await response.json();
+      setSummary(data.summary);
       setShowSummary(true);
     } catch (error) {
       console.error('Error generating summary:', error);
